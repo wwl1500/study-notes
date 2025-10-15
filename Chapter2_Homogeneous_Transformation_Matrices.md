@@ -1,3 +1,7 @@
+---
+math: true
+---
+
 # 第二章 齐次变换矩阵（Homogeneous Transformation Matrices）
 
 > 本章是机器人几何与运动学建模的核心内容。通过齐次变换矩阵（Homogeneous Transformation Matrix），可以统一描述物体的**平移**与**旋转**，并为后续的机器人运动学、动力学和控制提供基础。
