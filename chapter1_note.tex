@@ -1,0 +1,186 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[UTF8, scheme=plain]{ctex}        % 中文支持
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\geometry{margin=2.5cm}
+
+% 设置中文字体
+\setCJKmainfont{AR PL UMing CN}
+\setCJKsansfont{Noto Sans CJK SC}
+\setCJKmonofont{AR PL KaitiM GB}
+
+\title{《Robotics》第一章详细推导讲解版}
+\author{整理与讲解：wwl}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{引言：什么是工业机器人}
+根据国际标准 ISO~8373：
+\begin{quote}
+工业机器人操纵器是一种带有反馈控制的、可重编程的、多用途机械系统，至少具有三个或更多自由度，用于工业自动化。
+\end{quote}
+
+\noindent
+这句话中包含几个关键概念：
+\begin{itemize}
+  \item \textbf{反馈控制（feedback control）}：机器人能用传感器感知自己的动作（如位置、速度），并自动修正误差。
+  \item \textbf{可重编程（reprogrammable）}：改变程序就能执行不同的任务。
+  \item \textbf{多用途（multipurpose）}：同一台机器人可执行焊接、搬运、装配等多种工序。
+\end{itemize}
+
+机器人通常由三部分组成：
+\[
+\text{执行机构（motors）} + \text{传感器（sensors）} + \text{控制系统（controller）}
+\]
+控制器的目标是让机器人的“手”（末端执行器）准确按照我们设定的轨迹运动。
+
+\section{自由度（Degree of Freedom, DOF）的基本概念}
+自由度（简称 DOF）表示一个系统的\textbf{独立运动方向的数量}。  
+简单地说：描述这个系统位置所需要的独立数值（坐标）有多少，它就有多少个自由度。
+
+\subsection{从质点讲起}
+我们从最简单的情况开始——一个小球（质点）：
+
+\paragraph{（1）一维运动：}
+如果小球只能在一条直线上来回滑动（比如套在铁丝上），
+它的位置可以用一个数 \(x\) 表示。  
+所以它有：
+\[
+\boxed{1\ \text{个自由度}}
+\]
+
+\paragraph{（2）二维运动：}
+如果小球能在一个平面上移动（比如桌面上滑动），
+它的位置由两个坐标 \(x, y\) 表示：
+\[
+\boldsymbol{r} = x\,\boldsymbol{i} + y\,\boldsymbol{j}
+\]
+这里 \(\boldsymbol{i},\boldsymbol{j}\) 是坐标轴方向。  
+此时我们需要两个数值来确定小球的位置，所以：
+\[
+\boxed{2\ \text{个自由度}}
+\]
+
+\paragraph{（3）三维运动：}
+如果小球能在空间中任意运动，则位置向量为：
+\[
+\boldsymbol{r} = x\,\boldsymbol{i} + y\,\boldsymbol{j} + z\,\boldsymbol{k}
+\]
+需要三个坐标 \((x,y,z)\) 才能确定位置，因此：
+\[
+\boxed{3\ \text{个自由度}}
+\]
+
+\subsection{刚体的自由度推导}
+刚体可以看作由多个质点组成，但这些质点之间的\textbf{距离固定}。  
+假设刚体由 3 个不在一条直线上的质点组成。
+
+\begin{itemize}
+  \item 每个质点在空间中有 3 个坐标：总共 \(3\times3 = 9\) 个变量。
+  \item 由于刚体形状不变，三对质点间距离固定，产生 3 个约束条件：
+  \[
+  |\boldsymbol{r}_1 - \boldsymbol{r}_2| = c_{12}, \quad
+  |\boldsymbol{r}_1 - \boldsymbol{r}_3| = c_{13}, \quad
+  |\boldsymbol{r}_2 - \boldsymbol{r}_3| = c_{23}
+  \]
+  \item 所以独立变量数为 \(9 - 3 = 6\)。
+\end{itemize}
+
+\noindent
+因此，一个刚体在三维空间中有：
+\[
+\boxed{6\ \text{个自由度} = 3\ \text{个平移} + 3\ \text{个转动}}
+\]
+
+\paragraph{解释：}
+\begin{itemize}
+  \item \textbf{平移自由度}：沿 $x, y, z$ 三个方向的位置变化；
+  \item \textbf{转动自由度}：绕 $x, y, z$ 三个轴的旋转角度；
+\end{itemize}
+这六个参数完全决定刚体的“姿态（pose）”：
+\[
+\text{Pose} = \text{位置（position）} + \text{方向（orientation）}
+\]
+
+\section{关节与机械臂结构}
+工业机器人不是一个整体的刚体，而是由若干\textbf{刚性连杆（links）}通过\textbf{关节（joints）}连接而成。
+
+\subsection{关节类型}
+每个关节通常只保留一个自由度：
+\begin{itemize}
+  \item \textbf{转动关节（Revolute Joint, R）}：允许绕固定轴旋转。  
+    变量：转角 \(\theta\)
+  \item \textbf{移动关节（Prismatic Joint, T）}：允许沿固定轴滑动。  
+    变量：距离 \(d\)
+\end{itemize}
+
+\subsection{串联机构自由度计算}
+假设机器人有 $J$ 个一自由度关节。  
+整个机构包含 $N=J+1$ 个刚体（包括基座）。  
+每个刚体原本有 6 个自由度，总共 \(6N\)。  
+每个关节去掉 \(6-1=5\) 个自由度（因为只保留 1 个），  
+于是系统总自由度为：
+\[
+F = 6N - 5J = 6(J+1) - 5J = J + 6
+\]
+若基座固定（减掉 6 个基座自由度），得：
+\[
+\boxed{F = J}
+\]
+也就是说，一个有 6 个关节的机械臂，就有 6 个自由度。
+
+\section{机械臂与腕部}
+机器人操纵器一般分为三部分：
+
+\begin{itemize}
+  \item \textbf{机械臂（Arm）}：主要负责移动末端的位置；
+  \item \textbf{腕部（Wrist）}：调整末端的方向；
+  \item \textbf{夹具（Gripper）}：夹取或释放物体。
+\end{itemize}
+
+为了能在空间中任意“摆放”物体，机械臂 + 腕部至少要提供 6 个独立运动方向：
+\[
+3\ \text{个平移} + 3\ \text{个转动}
+\]
+
+\section{典型机械臂结构}
+工业上常见的三自由度机械臂主要有以下几种形式：
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{llll}
+\toprule
+名称 & 关节类型 & 自由度组合 & 工作空间形状 \\
+\midrule
+仿人型 (Anthropomorphic) & R–R–R & 三转动 & 球形 \\
+球坐标型 (Spherical) & R–R–T & 两转动一平移 & 球形 \\
+SCARA 型 & R–R–T & 两转动一平移 & 圆柱形 \\
+圆柱型 (Cylindrical) & R–T–T & 一转动两平移 & 圆柱形 \\
+笛卡尔型 (Cartesian) & T–T–T & 三平移 & 长方体 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+这些结构的选择取决于所需的工作空间形状和任务类型。  
+例如：
+\begin{itemize}
+  \item SCARA 机器人常用于装配；
+  \item 笛卡尔型适合精密搬运；
+  \item 仿人型可完成复杂空间路径。
+\end{itemize}
+
+\section{总结}
+\begin{enumerate}
+  \item 自由度表示系统能独立运动的方向数量；
+  \item 质点在空间有 3 个自由度，刚体有 6 个自由度；
+  \item 串联机器人每个关节贡献 1 个自由度；
+  \item 完整空间操作需至少 6 个自由度；
+  \item 工业机器人由机械臂、腕部和夹具组成；
+  \item 各类机械臂结构可归纳为 RRR、RRT、RTT、TTT 等形式。
+\end{enumerate}
+
+\end{document}

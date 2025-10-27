@@ -1,0 +1,31 @@
+# LaTeX auxiliary files
+*.aux
+*.log
+*.synctex.gz
+*.synctex(busy)
+*.fdb_latexmk
+*.fls
+*.out
+*.toc
+*.lof
+*.lot
+*.bbl
+*.blg
+*.nav
+*.snm
+
+# LaTeX temporary files
+missfont.log
+*.bak
+*~
+
+# Generated PDFs (uncomment if you want to track PDFs)
+# *.pdf
+
+# VS Code
+.vscode/launch.json
+.vscode/tasks.json
+
+# OS files
+.DS_Store
+Thumbs.db
