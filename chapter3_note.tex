@@ -1,0 +1,282 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{ctex}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\geometry{margin=2.5cm}
+
+\title{《Robotics》第三章}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{引言：为什么需要几何建模}
+在前一章中，我们学到了如何用齐次变换矩阵描述物体的“整体”位置和方向。  
+但在机器人学中，我们经常需要更细致地表示：
+\begin{itemize}
+  \item 某一点的位置；
+  \item 某个方向（比如机械臂的轴向）；
+  \item 两个坐标系之间的相对关系；
+  \item 末端执行器在空间中的姿态。
+\end{itemize}
+
+这些都离不开一种工具——\textbf{向量（Vector）}。
+
+---
+
+\section{向量的基本定义}
+\subsection{几何意义}
+一个向量是一个既有“方向”又有“长度”的量，通常画成一根带箭头的线段。  
+记为：
+\[
+\boldsymbol{v} = \overrightarrow{AB}
+\]
+表示从点 \(A\) 到点 \(B\) 的有向线段。
+
+\subsection{代数表示}
+在三维笛卡尔坐标系中，任何向量都可以分解为 $x,y,z$ 三个方向的分量：
+\[
+\boldsymbol{v} = v_x\,\boldsymbol{i} + v_y\,\boldsymbol{j} + v_z\,\boldsymbol{k}
+\]
+其中：
+\(\boldsymbol{i}, \boldsymbol{j}, \boldsymbol{k}\) 是三个互相垂直的单位向量。
+
+用矩阵形式表示为：
+\[
+\boldsymbol{v} = 
+\begin{bmatrix}
+v_x \\ v_y \\ v_z
+\end{bmatrix}
+\]
+
+---
+
+\section{向量的基本运算}
+\subsection{加法与减法}
+设有两个向量：
+\[
+\boldsymbol{a} =
+\begin{bmatrix}
+a_x \\ a_y \\ a_z
+\end{bmatrix},
+\quad
+\boldsymbol{b} =
+\begin{bmatrix}
+b_x \\ b_y \\ b_z
+\end{bmatrix}
+\]
+则：
+\[
+\boldsymbol{a} + \boldsymbol{b} =
+\begin{bmatrix}
+a_x + b_x \\ a_y + b_y \\ a_z + b_z
+\end{bmatrix},
+\quad
+\boldsymbol{a} - \boldsymbol{b} =
+\begin{bmatrix}
+a_x - b_x \\ a_y - b_y \\ a_z - b_z
+\end{bmatrix}
+\]
+
+\subsection{数乘}
+向量与标量相乘，只改变长度，不改变方向：
+\[
+k\boldsymbol{a} =
+\begin{bmatrix}
+k a_x \\ k a_y \\ k a_z
+\end{bmatrix}
+\]
+
+\subsection{点积（内积）}
+定义为：
+\[
+\boldsymbol{a}\cdot\boldsymbol{b} = a_x b_x + a_y b_y + a_z b_z
+\]
+几何意义：
+\[
+\boldsymbol{a}\cdot\boldsymbol{b} = |\boldsymbol{a}||\boldsymbol{b}|\cos\theta
+\]
+其中 $\theta$ 为两向量夹角。
+
+由此可得：
+\[
+\boxed{\cos\theta = \dfrac{\boldsymbol{a}\cdot\boldsymbol{b}}{|\boldsymbol{a}||\boldsymbol{b}|}}
+\]
+这可以用来求两个方向之间的夹角。
+
+\subsection{叉积（外积）}
+叉积结果仍是一个向量，方向垂直于两向量所在平面（遵守右手定则）：
+\[
+\boldsymbol{a}\times\boldsymbol{b} =
+\begin{bmatrix}
+a_y b_z - a_z b_y \\
+a_z b_x - a_x b_z \\
+a_x b_y - a_y b_x
+\end{bmatrix}
+\]
+几何意义：
+\[
+|\boldsymbol{a}\times\boldsymbol{b}| = |\boldsymbol{a}|\,|\boldsymbol{b}|\,\sin\theta
+\]
+表示由 $\boldsymbol{a}$ 与 $\boldsymbol{b}$ 构成的平行四边形的面积。
+
+---
+
+\section{点的位置向量与坐标变换}
+\subsection{位置向量}
+在一个坐标系 $O-XYZ$ 中，点 $P$ 的位置可由向量表示：
+\[
+\boldsymbol{r}_P = x\,\boldsymbol{i} + y\,\boldsymbol{j} + z\,\boldsymbol{k}
+\]
+或简写为列向量：
+\[
+\boldsymbol{r}_P =
+\begin{bmatrix}
+x \\ y \\ z
+\end{bmatrix}
+\]
+
+\subsection{两点间的向量}
+若有两点 $A(x_A, y_A, z_A)$ 和 $B(x_B, y_B, z_B)$，  
+则：
+\[
+\overrightarrow{AB} = \boldsymbol{r}_B - \boldsymbol{r}_A =
+\begin{bmatrix}
+x_B - x_A \\ y_B - y_A \\ z_B - z_A
+\end{bmatrix}
+\]
+
+---
+
+\section{不同坐标系之间的向量表示}
+\subsection{旋转矩阵的几何意义}
+假设有两个坐标系：
+\begin{itemize}
+  \item 原坐标系：$O-XYZ$
+  \item 新坐标系：$O'-X'Y'Z'$
+\end{itemize}
+它们之间仅有旋转，没有平移。
+
+若新坐标系的三个单位向量在旧坐标系中的坐标为：
+\[
+\boldsymbol{x}' = 
+\begin{bmatrix} r_{11} \\ r_{21} \\ r_{31} \end{bmatrix},\quad
+\boldsymbol{y}' = 
+\begin{bmatrix} r_{12} \\ r_{22} \\ r_{32} \end{bmatrix},\quad
+\boldsymbol{z}' = 
+\begin{bmatrix} r_{13} \\ r_{23} \\ r_{33} \end{bmatrix}
+\]
+则旋转矩阵定义为：
+\[
+R =
+\begin{bmatrix}
+r_{11} & r_{12} & r_{13}\\
+r_{21} & r_{22} & r_{23}\\
+r_{31} & r_{32} & r_{33}
+\end{bmatrix}
+\]
+矩阵的每一列就是新坐标系各轴在旧坐标系中的方向余弦。
+
+\subsection{向量的坐标变换}
+设同一个向量 $\boldsymbol{v}$ 在两个坐标系中的表示分别为：
+\[
+\boldsymbol{v}_A =
+\begin{bmatrix} v_{xA}\\ v_{yA}\\ v_{zA} \end{bmatrix}, \quad
+\boldsymbol{v}_B =
+\begin{bmatrix} v_{xB}\\ v_{yB}\\ v_{zB} \end{bmatrix}
+\]
+若坐标系 $B$ 相对于 $A$ 发生了旋转 $R_{A}^{B}$，  
+则有：
+\[
+\boxed{
+\boldsymbol{v}_A = R_{A}^{B} \boldsymbol{v}_B
+}
+\]
+这就是\textbf{向量坐标变换公式}。  
+其反变换（从 $A$ 到 $B$）为：
+\[
+\boldsymbol{v}_B = (R_{A}^{B})^T \boldsymbol{v}_A
+\]
+因为旋转矩阵是正交矩阵，满足：
+\[
+R^T R = I
+\]
+
+---
+
+\section{点的坐标变换（带平移）}
+若两个坐标系不仅有旋转，还有平移：
+\[
+\text{坐标系 } B \text{ 相对于 } A \text{ 平移 } \boldsymbol{d} =
+\begin{bmatrix} d_x \\ d_y \\ d_z \end{bmatrix}
+\]
+则任意点 $P$ 的位置满足：
+\[
+\boldsymbol{r}_P^A = R_{A}^{B} \boldsymbol{r}_P^B + \boldsymbol{d}
+\]
+这就是上一章齐次矩阵关系的核心部分。
+
+---
+
+\section{例题：两坐标系变换}
+假设坐标系 $B$ 相对 $A$：
+- 绕 $z$ 轴旋转 $90^\circ$；
+- 再平移 $(2,0,0)$。
+
+\noindent
+旋转矩阵：
+\[
+R_{A}^{B} =
+\begin{bmatrix}
+0 & -1 & 0\\
+1 & 0 & 0\\
+0 & 0 & 1
+\end{bmatrix}, \quad
+\boldsymbol{d} =
+\begin{bmatrix}
+2 \\ 0 \\ 0
+\end{bmatrix}
+\]
+若点 $P$ 在 $B$ 系中坐标为 $(1,1,0)$，则其在 $A$ 系中的坐标为：
+\[
+\boldsymbol{r}_P^A =
+R_{A}^{B}\boldsymbol{r}_P^B + \boldsymbol{d}
+=
+\begin{bmatrix}
+0 & -1 & 0\\
+1 & 0 & 0\\
+0 & 0 & 1
+\end{bmatrix}
+\begin{bmatrix}
+1 \\ 1 \\ 0
+\end{bmatrix}
++
+\begin{bmatrix}
+2 \\ 0 \\ 0
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 \\ 1 \\ 0
+\end{bmatrix}
+\]
+结果表示该点在 $A$ 系中坐标为 $(1,1,0)$。
+
+---
+
+\section{总结}
+\begin{enumerate}
+  \item 向量用于描述空间中的位置与方向；
+  \item 向量的加减、点积、叉积分别表示合成、夹角与垂直面积；
+  \item 坐标变换通过旋转矩阵 $R$ 与平移向量 $\boldsymbol{d}$ 实现；
+  \item 两坐标系之间的关系可统一写作：
+  \[
+  \boldsymbol{r}_P^A = R_{A}^{B}\boldsymbol{r}_P^B + \boldsymbol{d}
+  \]
+  \item 旋转矩阵是正交矩阵，满足 $R^T R = I$；
+  \item 该章为后续“正运动学与逆运动学”打下数学基础。
+\end{enumerate}
+
+\end{document}

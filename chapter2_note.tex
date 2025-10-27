@@ -1,0 +1,259 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{ctex}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\geometry{margin=2.5cm}
+
+\title{《Robotics》第二章}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{为什么要引入齐次变换矩阵}
+在机器人学中，机械臂的每一段（连杆）都可以视为一个刚体。  
+描述刚体在空间中的位置与姿态，需要同时考虑：
+\begin{itemize}
+  \item \textbf{平移}（translation）：描述物体在空间中的位置；
+  \item \textbf{旋转}（rotation）：描述物体的方向。
+\end{itemize}
+
+但在实际计算中，我们希望能用\textbf{一个统一的数学表达式}来同时处理平移和旋转。  
+这就是为什么引入——**齐次变换矩阵（Homogenous Transformation Matrix）**。
+
+齐次矩阵将旋转和平移统一为一个 \(4\times4\) 矩阵运算，使得：
+\[
+\text{旋转 + 平移 = 一次矩阵相乘}
+\]
+
+---
+
+\section{平移变换的数学表示}
+设有一个点 \(P\)，其在坐标系中的位置为：
+\[
+P = 
+\begin{bmatrix}
+x \\ y \\ z
+\end{bmatrix}
+\]
+
+如果我们让这个点平移一个向量
+\[
+\boldsymbol{d} = 
+\begin{bmatrix}
+a \\ b \\ c
+\end{bmatrix}
+\]
+则平移后的点 \(P'\) 坐标为：
+\[
+P' = 
+\begin{bmatrix}
+x + a \\ y + b \\ z + c
+\end{bmatrix}
+\]
+
+这种表达很直观，但无法与旋转统一起来。  
+于是我们引入一个“**齐次坐标**”，也就是在坐标向量末尾加上一个 1：
+\[
+\boldsymbol{q} = 
+\begin{bmatrix}
+x \\ y \\ z \\ 1
+\end{bmatrix}
+\]
+
+这样，平移就可以写成一个矩阵乘法：
+\[
+\boldsymbol{v} =
+\underbrace{
+\begin{bmatrix}
+1 & 0 & 0 & a \\
+0 & 1 & 0 & b \\
+0 & 0 & 1 & c \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+}_{\text{平移矩阵 } T(a,b,c)}
+\begin{bmatrix}
+x \\ y \\ z \\ 1
+\end{bmatrix}
+=
+\begin{bmatrix}
+x+a \\ y+b \\ z+c \\ 1
+\end{bmatrix}
+\]
+
+我们称这个 \(4\times4\) 矩阵为\textbf{平移齐次矩阵}：
+\[
+T(a,b,c) = 
+\begin{bmatrix}
+1 & 0 & 0 & a \\
+0 & 1 & 0 & b \\
+0 & 0 & 1 & c \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\]
+
+---
+
+\section{旋转变换的推导}
+旋转描述物体绕坐标轴的转动。  
+我们采用右手定则：  
+右手大拇指指向旋转轴正方向，四指弯曲方向为正旋转方向。
+
+\subsection{绕 $x$ 轴旋转}
+如图所示，旋转角度为 $\alpha$。  
+原点不动，$x$ 轴方向不变，$y$ 轴和 $z$ 轴发生变化：
+\[
+\begin{cases}
+y' = y\cos\alpha - z\sin\alpha \\
+z' = y\sin\alpha + z\cos\alpha
+\end{cases}
+\]
+写成矩阵形式：
+\[
+R_x(\alpha) =
+\begin{bmatrix}
+1 & 0 & 0 & 0\\
+0 & \cos\alpha & -\sin\alpha & 0\\
+0 & \sin\alpha & \cos\alpha & 0\\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\]
+
+\subsection{绕 $y$ 轴旋转}
+绕 $y$ 轴旋转角度 $\beta$：
+\[
+\begin{cases}
+x' = x\cos\beta + z\sin\beta \\
+z' = -x\sin\beta + z\cos\beta
+\end{cases}
+\]
+齐次矩阵表示：
+\[
+R_y(\beta) =
+\begin{bmatrix}
+\cos\beta & 0 & \sin\beta & 0\\
+0 & 1 & 0 & 0\\
+-\sin\beta & 0 & \cos\beta & 0\\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\]
+
+\subsection{绕 $z$ 轴旋转}
+绕 $z$ 轴旋转角度 $\gamma$：
+\[
+\begin{cases}
+x' = x\cos\gamma - y\sin\gamma \\
+y' = x\sin\gamma + y\cos\gamma
+\end{cases}
+\]
+齐次矩阵为：
+\[
+R_z(\gamma) =
+\begin{bmatrix}
+\cos\gamma & -\sin\gamma & 0 & 0\\
+\sin\gamma & \cos\gamma & 0 & 0\\
+0 & 0 & 1 & 0\\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\]
+
+---
+
+\section{综合旋转和平移：齐次变换矩阵}
+现在我们希望一个矩阵能同时描述物体的“旋转 + 平移”。  
+定义：
+\[
+H =
+\begin{bmatrix}
+R & \boldsymbol{d} \\
+0\ 0\ 0 & 1
+\end{bmatrix}
+\]
+其中：
+\begin{itemize}
+  \item \(R\) 是 \(3\times3\) 的旋转矩阵；
+  \item \(\boldsymbol{d} = [a\ b\ c]^T\) 是平移向量；
+\end{itemize}
+
+那么，对于任意点
+\[
+\boldsymbol{p} = 
+\begin{bmatrix}
+x \\ y \\ z \\ 1
+\end{bmatrix}
+\]
+其经过旋转和平移后的新坐标为：
+\[
+\boldsymbol{p}' = H \boldsymbol{p}
+\]
+
+即：
+\[
+\boxed{
+\boldsymbol{p}' = R\boldsymbol{p} + \boldsymbol{d}
+}
+\]
+这就是机器人学中描述刚体位置和方向的\textbf{基本方程}。
+
+---
+
+\section{齐次矩阵的物理含义}
+\subsection{表示姿态（Pose）}
+矩阵 $H$ 不仅仅是一个变换运算符，它也代表一个坐标系相对于另一个坐标系的姿态：
+\[
+H =
+\begin{bmatrix}
+R & \boldsymbol{d} \\
+0 & 1
+\end{bmatrix}
+\]
+含义：
+- \(R\)：新坐标系的三个轴方向在旧坐标系中的投影；
+- \(\boldsymbol{d}\)：新坐标系原点在旧坐标系中的位置。
+
+\subsection{多个变换的组合}
+如果一个坐标系先经历 $H_1$ 变换，再经历 $H_2$ 变换，  
+则总变换为：
+\[
+H = H_1 H_2
+\]
+这叫做“**齐次变换的链式法则**”，  
+在机器人机械臂建模中极其重要。
+
+---
+
+\section{例子：连续变换}
+假设一个坐标系先绕 $z$ 轴旋转 90°，再平移 $(4,-3,7)$。  
+写成矩阵：
+\[
+H = T(4,-3,7)\,R_z(90^\circ)
+\]
+数值代入：
+\[
+H =
+\begin{bmatrix}
+0 & -1 & 0 & 4\\
+1 & 0 & 0 & -3\\
+0 & 0 & 1 & 7\\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\]
+
+这表示：  
+- 新坐标系的 $x'$ 轴指向旧坐标系的 $y$ 方向；  
+- 新原点位于 $(4,-3,7)$。
+
+---
+
+\section{总结}
+\begin{itemize}
+  \item 平移和旋转都可表示为 \(4\times4\) 矩阵；
+  \item 齐次变换矩阵 $H$ 将两者统一；
+  \item 通过矩阵乘法可以方便地进行多级坐标变换；
+  \item 在机器人学中，每个连杆之间的关系都用齐次矩阵描述。
+\end{itemize}
+
+\end{document}

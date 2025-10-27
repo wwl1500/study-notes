@@ -1,0 +1,212 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{ctex}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\geometry{margin=2.5cm}
+
+\title{《Robotics》第四章}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{引言：什么是正运动学}
+机械臂有多个关节和连杆，每个关节可以转动或滑动。  
+所谓“\textbf{正运动学}（Forward Kinematics）”就是——  
+\begin{quote}
+已知每个关节的运动参数（角度或位移），求出末端执行器的位置与方向。
+\end{quote}
+
+\noindent
+相对地，“逆运动学”是已知末端位置，求各关节参数。
+
+\paragraph{举个例子：}
+假设一个两连杆机械臂（类似人类的肩膀和手肘）：
+- 第一个关节角为 $\theta_1$；
+- 第二个关节角为 $\theta_2$；
+- 连杆长度为 $L_1, L_2$；
+则末端的位置是：
+\[
+\begin{cases}
+x = L_1\cos\theta_1 + L_2\cos(\theta_1+\theta_2)\\
+y = L_1\sin\theta_1 + L_2\sin(\theta_1+\theta_2)
+\end{cases}
+\]
+这就是一个最简单的正运动学问题。
+
+---
+
+\section{Denavit–Hartenberg（DH）建模法}
+为了描述任意复杂的机械臂，我们需要一种统一的数学表示。  
+1955 年，Denavit 和 Hartenberg 提出了一种方法（简称 \textbf{DH 参数法}）。
+
+DH 方法通过为每个连杆定义一个坐标系，用四个参数描述它与前一连杆的几何关系。
+
+---
+
+\section{四个 DH 参数的定义}
+考虑第 $i-1$ 与第 $i$ 个连杆之间的连接关系：
+
+| 符号 | 名称 | 含义 |
+|------|------|------|
+| \(a_i\) | 连杆长度 | $x_i$ 轴在 $x_{i-1}$ 轴方向上的投影长度 |
+| \(\alpha_i\) | 连杆扭角 | $z_{i-1}$ 与 $z_i$ 之间的夹角 |
+| \(d_i\) | 连杆偏距 | $z_{i-1}$ 轴到 $x_i$ 轴的距离（沿 $z_{i-1}$） |
+| \(\theta_i\) | 关节角 | $x_{i-1}$ 与 $x_i$ 之间的夹角（绕 $z_{i-1}$） |
+
+\paragraph{说明：}
+- 对于转动关节（R 型），\(\theta_i\) 是变量，\(d_i\) 为常量；
+- 对于移动关节（T 型），\(d_i\) 是变量，\(\theta_i\) 为常量。
+
+---
+
+\section{DH 坐标系建立规则}
+每个关节分配一个坐标系 $O_i-x_i y_i z_i$：
+
+1. $z_i$ 轴沿关节轴线方向；
+2. $x_i$ 轴沿着 $z_{i-1}$ 与 $z_i$ 之间的公法线；
+3. 原点 $O_i$ 设在两轴公法线与 $z_i$ 的交点处；
+4. $y_i$ 轴由右手定则确定。
+
+这样，每个坐标系之间的几何关系就唯一确定。
+
+---
+
+\section{单个连杆的变换矩阵}
+根据 DH 定义，坐标系 $i$ 相对于坐标系 $i-1$ 的齐次变换矩阵为：
+\[
+^{i-1}T_i =
+\begin{bmatrix}
+\cos\theta_i & -\sin\theta_i\cos\alpha_i & \sin\theta_i\sin\alpha_i & a_i\cos\theta_i\\
+\sin\theta_i & \cos\theta_i\cos\alpha_i & -\cos\theta_i\sin\alpha_i & a_i\sin\theta_i\\
+0 & \sin\alpha_i & \cos\alpha_i & d_i\\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\]
+
+\paragraph{推导思路：}
+它由以下四个基本变换依次组成：
+1. 绕 $z_{i-1}$ 旋转 $\theta_i$；
+2. 沿 $z_{i-1}$ 平移 $d_i$；
+3. 沿 $x_i$ 平移 $a_i$；
+4. 绕 $x_i$ 旋转 $\alpha_i$。
+
+\noindent
+将这四步的齐次矩阵相乘即可得到上式。
+
+---
+
+\section{整条机械臂的正运动学}
+对于 $n$ 个关节的机械臂，末端坐标系 $n$ 相对基座坐标系 $0$ 的齐次变换矩阵为：
+\[
+^{0}T_n = {^{0}T_1} {^{1}T_2} {^{2}T_3} \cdots {^{n-1}T_n}
+\]
+
+\paragraph{含义：}
+这个矩阵的上 $3\times3$ 部分给出末端方向（旋转矩阵 $R$），  
+右上角的 $3\times1$ 列给出末端位置（平移向量 $\boldsymbol{p}$）：
+\[
+^{0}T_n =
+\begin{bmatrix}
+R & \boldsymbol{p}\\
+0 & 1
+\end{bmatrix}
+\]
+因此，末端执行器的“姿态（Pose）”完全由 $^{0}T_n$ 决定。
+
+---
+
+\section{二维平面两连杆机械臂示例}
+\subsection{几何关系}
+设：
+\begin{itemize}
+  \item 第一连杆长度 $L_1$，关节角 $\theta_1$；
+  \item 第二连杆长度 $L_2$，关节角 $\theta_2$；
+  \item 所有运动在 $xy$ 平面内。
+\end{itemize}
+
+\subsection{位置推导}
+从几何上：
+\[
+\begin{cases}
+x = L_1\cos\theta_1 + L_2\cos(\theta_1+\theta_2)\\[6pt]
+y = L_1\sin\theta_1 + L_2\sin(\theta_1+\theta_2)
+\end{cases}
+\]
+
+写成齐次矩阵形式：
+\[
+^{0}T_1 =
+\begin{bmatrix}
+\cos\theta_1 & -\sin\theta_1 & 0 & L_1\cos\theta_1\\
+\sin\theta_1 & \cos\theta_1 & 0 & L_1\sin\theta_1\\
+0 & 0 & 1 & 0\\
+0 & 0 & 0 & 1
+\end{bmatrix},
+\quad
+^{1}T_2 =
+\begin{bmatrix}
+\cos\theta_2 & -\sin\theta_2 & 0 & L_2\cos\theta_2\\
+\sin\theta_2 & \cos\theta_2 & 0 & L_2\sin\theta_2\\
+0 & 0 & 1 & 0\\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\]
+
+两者相乘：
+\[
+^{0}T_2 = {^{0}T_1}{^{1}T_2}
+\]
+化简后：
+\[
+^{0}T_2 =
+\begin{bmatrix}
+\cos(\theta_1+\theta_2) & -\sin(\theta_1+\theta_2) & 0 & L_1\cos\theta_1 + L_2\cos(\theta_1+\theta_2)\\
+\sin(\theta_1+\theta_2) & \cos(\theta_1+\theta_2) & 0 & L_1\sin\theta_1 + L_2\sin(\theta_1+\theta_2)\\
+0 & 0 & 1 & 0\\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\]
+这给出了末端的完整位姿。
+
+---
+
+\section{三维例子：RRR 机械臂（空间三转动）}
+三自由度仿人型机械臂（RRR 型）通常每个关节都是转动的。  
+它的末端姿态由三个角度（常称“Euler angles”或“roll–pitch–yaw”）决定。
+
+对应的总变换：
+\[
+^{0}T_3 = {^{0}T_1}{^{1}T_2}{^{2}T_3}
+\]
+通过给出各关节的 DH 参数，可依次求出每个 $^{i-1}T_i$ 并相乘。
+
+---
+
+\section{物理意义与结论}
+\begin{itemize}
+  \item 正运动学求解了“关节变量 → 末端姿态”的映射；
+  \item 齐次变换矩阵将所有旋转与平移统一在一个框架；
+  \item DH 参数提供了系统化的建模方法；
+  \item 任意多连杆机械臂的位姿可通过矩阵连乘得到；
+  \item 该结果是运动学、雅可比矩阵和控制分析的基础。
+\end{itemize}
+
+---
+
+\section{总结公式表}
+
+| 概念 | 表达式 |
+|------|----------|
+| 单连杆变换 | \(^{i-1}T_i = R_z(\theta_i)T_z(d_i)T_x(a_i)R_x(\alpha_i)\) |
+| 多连杆合成 | \(^{0}T_n = \prod_{i=1}^n\,^{i-1}T_i\) |
+| 末端位置 | 右上角 \(3\times1\) 向量 |
+| 末端姿态 | 左上角 \(3\times3\) 旋转矩阵 |
+| 二连杆平面臂 | \(x=L_1\cos\theta_1+L_2\cos(\theta_1+\theta_2)\), \\ \(y=L_1\sin\theta_1+L_2\sin(\theta_1+\theta_2)\) |
+
+---
+
+\end{document}
